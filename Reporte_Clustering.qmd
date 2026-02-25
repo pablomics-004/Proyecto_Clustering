@@ -1,8 +1,8 @@
 ---
 title: "Proyecto Final"
 subtitle: "Clustering de proteínas ortólogas"
-author: "Pablo Salazar-Méndez"
-date: "2024-06-22"
+author: "Mateo Jiménez-Sotelo y Pablo Salazar-Méndez"
+date: "2024-06-27"
 format:
   pdf:
     pdf-engine: xelatex
@@ -18,23 +18,84 @@ format:
 
 Para obtener las 100 secuencias homólogas se seleccionó la proteína [recA](https://www.uniprot.org/uniprotkb?query=RecA&facets=reviewed%3Atrue%2Clength%3A%5B201+TO+400%5D%2Cexistence%3A3) desde _UniProt_
 
-```{shell}
+```{shell Formateando FASTA}
+#| echo: true
+#| eval: true
+#| message: false
 
 cut -f1 -d' ' ./data/recA_homologues.faa | awk '
 /^>/ {gsub(/sp\|[A-Z0-9]+\|/, "", $0)}
 { print }
 ' > ./data/recA_new_headers.faa
+```
+```{shell Ejecución del BLASTp}
+#| echo: true
+#| eval: false
+#| message: false
 
 makeblastdb -in ./data/recA_new_headers.faa -dbtype prot -out ./data/recA_db
 
-blastp \
-  -query ./data/recA_new_headers.faa \
-  -db ./data/recA_db \
-  -outfmt "6 qseqid sseqid bitscore" \
-  -max_hsps 1 \
-  -use_sw_tback \
-  -num_threads 8 \
-  > ./results/all_vs_all_bitscore.tsv
+nohup bash -lc '
+  blastp \
+    -query ./data/recA_new_headers.faa \
+    -db ./data/recA_db \
+    -outfmt "6 qseqid sseqid bitscore" \
+    -max_hsps 1 \
+    -use_sw_tback \
+    -num_threads 8 \
+    > ./results/all_vs_all_bitscore.tsv
+' > ./logs/all_vs_all_blastp.log 2>&1 &
+```
+```{shell Obteniendo la triangular superior pt. 1}
+#| eval: true
+#| echo: true
+#| message: false
+
+# Filtrado de la diagonal
+awk 'BEGIN{OFS="\t"; print "qseqid","sseqid","bitscore"} 
+    $1 != $2' ./results/all_vs_all_bitscore.tsv > tmp.tsv && mv -f tmp.tsv ./results/all_vs_all_bitscore.tsv
+```
+
+```{python Obteniendo la triangular superior pt. 2}
+#| eval: true
+#| echo: true
+#| message: false
+
+import pandas as pd
+import numpy as np
+
+# Cargando los datos
+all_vs_all = pd.read_csv("./results/all_vs_all_bitscore.tsv", sep="\t", header=0)
+ids = pd.unique(pd.concat([all_vs_all["qseqid"], all_vs_all["sseqid"]]))
+
+# Normalizando los bitscores
+bitscore = all_vs_all["bitscore"]
+all_vs_all["bitscore"] = bitscore / bitscore.max()
+
+# Generando la triangular superior
+sup_tri = all_vs_all.pivot(
+  index="qseqid",
+  columns="sseqid",
+  values="bitscore"
+)
+matrix = sup_tri.fillna(np.nan)
+cols = matrix.columns
+indx = matrix.index
+matrix = matrix.to_numpy()
+
+# Encontrando el máximo bitscore para cada par de secuencias
+symm_matrix = np.fmax(matrix, matrix.T)
+
+# Generando matriz simétrica con índices y columnas
+symm_matrix = pd.DataFrame(
+  symm_matrix, index=indx, columns=cols
+).fillna(0)
+
+# Guardado
+symm_matrix.to_csv("./results/symmetric_bitscore_matrix.tsv", sep="\t")
+
+# Limpieza del entorno
+del all_vs_all, ids, sup_tri, matrix, cols, indx, symm_matrix, bitscore
 ```
 
 # Clustering
