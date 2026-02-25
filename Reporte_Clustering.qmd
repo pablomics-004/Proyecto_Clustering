@@ -46,57 +46,76 @@ nohup bash -lc '
     > ./results/all_vs_all_bitscore.tsv
 ' > ./logs/all_vs_all_blastp.log 2>&1 &
 ```
-```{shell Obteniendo la triangular superior pt. 1}
+```{shell Obteniendo la triangular superior}
 #| eval: true
 #| echo: true
 #| message: false
 
-# Filtrado de la diagonal
-awk 'BEGIN{OFS="\t"; print "qseqid","sseqid","bitscore"} 
-    $1 != $2' ./results/all_vs_all_bitscore.tsv > tmp.tsv && mv -f tmp.tsv ./results/all_vs_all_bitscore.tsv
+# Quedarnos con N(N-1)/2 hits únicos (triangular superior)
+awk -v FS="\t" -v OFS="\t" '
+FNR==NR {
+  if ($0 ~ /^>/) { gsub(/^>/,"",$0); ids[++n]=$0 }
+  next
+}
+# Parseo del archivo de bitscores
+# Nos quedamos con el bitscore más elevado para cada par de secuencias
+{
+  a=$1; b=$2; s=$3
+  if (a==b) next
+  if (a>b) {t=a;a=b;b=t}
+  key=a SUBSEP b
+  if (!(key in best) || s>best[key]) best[key]=s
+}
+END{
+  print "qseqid","sseqid","bitscore"
+  for (i=1;i<=n;i++) for (j=i+1;j<=n;j++) {
+    a=ids[i]; b=ids[j]
+    key=a SUBSEP b
+    print a,b,(key in best ? best[key] : 0)
+  }
+}
+' ./data/recA_new_headers.faa ./results/all_vs_all_bitscore.tsv \
+> ./results/suptrian_bitscore.tsv
 ```
 
-```{python Obteniendo la triangular superior pt. 2}
+```{python Obteniendo matrices simétrica y de distancias}
 #| eval: true
 #| echo: true
 #| message: false
 
+from numpy import fill_diagonal
 import pandas as pd
-import numpy as np
 
 # Cargando los datos
-all_vs_all = pd.read_csv("./results/all_vs_all_bitscore.tsv", sep="\t", header=0)
+all_vs_all = pd.read_csv("./results/suptrian_bitscore.tsv", sep="\t", header=0)
 
 # Normalizando los bitscores
 bitscore = all_vs_all["bitscore"]
 all_vs_all["bitscore"] = bitscore / bitscore.max()
 
-# Generando la triangular superior
-sup_tri = all_vs_all.pivot(
+# Generación de la triangular superior
+matrix = all_vs_all.pivot(
   index="qseqid",
   columns="sseqid",
   values="bitscore"
 )
-matrix = sup_tri.fillna(np.nan)
-cols = matrix.columns
-indx = matrix.index
-matrix = matrix.to_numpy()
 
-# Encontrando el máximo bitscore para cada par de secuencias
-symm_matrix = np.fmax(matrix, matrix.T)
+# IDs únicos en orden adecuado de las comparaciones
+ids = pd.unique(
+  pd.concat([all_vs_all["qseqid"], all_vs_all["sseqid"]])
+)
+matrix = matrix.reindex(index=ids, columns=ids)
 
-# Generando matriz simétrica con índices y columnas
-symm_matrix = pd.DataFrame(
-  symm_matrix, index=indx, columns=cols
-).fillna(0)
-dist_matrix = 1 - symm_matrix # Matriz de distancias
+# Reflejando valores
+similarity = matrix.combine_first(matrix.T).fillna(0)
+fill_diagonal(similarity.values, 1) # Similitud máxima consigo misma
+distance = 1 - similarity
 
 # Guardado
-symm_matrix.to_csv("./results/symmetric_bitscore_matrix.tsv", sep="\t")
-dist_matrix.to_csv("./results/distance_matrix.tsv", sep="\t")
+similarity.to_csv("./results/symmetric_bitscore_matrix.tsv", sep="\t")
+distance.to_csv("./results/distance_matrix.tsv", sep="\t")
 
-# Limpieza del entorno
-del all_vs_all, sup_tri, matrix, cols, indx, symm_matrix, bitscore, dist_matrix
+del similarity, distance, matrix, all_vs_all, bitscore, ids
 ```
 
 # Clustering
