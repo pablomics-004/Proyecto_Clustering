@@ -89,12 +89,14 @@ symm_matrix = np.fmax(matrix, matrix.T)
 symm_matrix = pd.DataFrame(
   symm_matrix, index=indx, columns=cols
 ).fillna(0)
+dist_matrix = 1 - symm_matrix # Matriz de distancias
 
 # Guardado
 symm_matrix.to_csv("./results/symmetric_bitscore_matrix.tsv", sep="\t")
+dist_matrix.to_csv("./results/distance_matrix.tsv", sep="\t")
 
 # Limpieza del entorno
-del all_vs_all, sup_tri, matrix, cols, indx, symm_matrix, bitscore
+del all_vs_all, sup_tri, matrix, cols, indx, symm_matrix, bitscore, dist_matrix
 ```
 
 # Clustering
