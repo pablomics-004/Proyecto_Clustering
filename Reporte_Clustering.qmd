@@ -10,13 +10,28 @@ format:
       text: |
         \usepackage{fvextra}
         \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
+
+bibliography: ./docs/referencias.bib
+csl: ./docs/apa.csl
 ---
 
 # Introducción
 
-# Obtención de datos
+La **minería de datos** es la disciplina por la cual la extracción de conocimiento útil a partir de grandes conjuntos de datos se hace posible. Ya que permite identificar patrones, relaciones y tendencias en los mismos, lo que a su vez facilita la generación de hipótesis y la toma de decisiones informadas en la investigación científica (@singh-2024).
 
-Para obtener las 100 secuencias homólogas se seleccionó la proteína [recA](https://www.uniprot.org/uniprotkb?query=RecA&facets=reviewed%3Atrue%2Clength%3A%5B201+TO+400%5D%2Cexistence%3A3) desde _UniProt_
+Dicho campo se fundamenta en dos principales modalidades de análisis: la **clasificación** y el **clustering** o agrupamiento. Este último sigue un enfoque no supervisado, lo que significa que no requiere etiquetas o categorías predefinidas (@singh-2024). En cambio, el clustering se basa en la similitud o distancia entre los objetos de estudio para agruparlos en función de sus características compartidas (@yao-2026).
+
+Ahora bien, el clustering **no es un proceso trivial**, ya que la naturaleza de los datos y la elección de las métricas de similitud o distancia, a.k.a. los parámetros, pueden influir significativamente en los resultados obtenidos independientemente del algoritmo elegido (@yao-2026). Por lo tanto, es crucial seleccionar cuidadosamente las técnicas de clustering y las métricas adecuadas para cada conjunto de datos específico.
+
+En muchos de los casos, la cantidad de grupos que deben formarse no es conocida de antemano, lo que añade un nivel adicional de complejidad al proceso de clustering (@singh-2024). En este sentido, meras evaluaciones numéricas por métodos automáticos pueden no ser suficientes para determinar el número óptimo de clusters, y es posible que se requiera un análisis más profundo y una interpretación cuidadosa de los resultados para tomar decisiones informadas sobre la cantidad de grupos a formar (@singh-2024).
+
+En suma, el clustering es una herramienta poderosa para descubrir patrones y relaciones en sistemas de interés con base en los datos, pero su aplicación requiere la selección adecuada de técnicas, métricas, y, sobretodo, un conocimiento profundo del dominio del que provienen para evitar caer en artefactos o interpretaciones erróneas de los resultados obtenidos.
+
+# Análisis
+
+## Obtención de datos
+
+Para obtener las 100 secuencias homólogas se seleccionó la proteína [recA](https://www.uniprot.org/uniprotkb?query=RecA&facets=reviewed%3Atrue%2Clength%3A%5B201+TO+400%5D%2Cexistence%3A3) desde _UniProt_, puesto que contaba con un amplio repertorio de proteínas homólogas anotadas. Se descargaron las secuencias en formato FASTA, con diversos taxa pero con ...
 
 ```{shell Formateando FASTA}
 #| echo: true
@@ -28,7 +43,7 @@ cut -f1 -d' ' ./data/recA_homologues.faa | awk '
 { print }
 ' > ./data/recA_new_headers.faa
 ```
-```{shell Ejecución del BLASTp}
+```{shell Ejecución de BLASTp}
 #| echo: true
 #| eval: false
 #| message: false
@@ -121,3 +136,5 @@ del similarity, distance, matrix, all_vs_all, bitscore, ids
 # Clustering
 
 # Resultados
+
+# Referencias
