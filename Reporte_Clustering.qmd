@@ -31,7 +31,23 @@ En suma, el clustering es una herramienta poderosa para descubrir patrones y rel
 
 ## Obtención de datos
 
-Para obtener las 100 secuencias homólogas se seleccionó la proteína [recA](https://www.uniprot.org/uniprotkb?query=RecA&facets=reviewed%3Atrue%2Clength%3A%5B201+TO+400%5D%2Cexistence%3A3) desde _UniProt_, puesto que contaba con un amplio repertorio de proteínas homólogas anotadas. Se descargaron las secuencias en formato FASTA, con diversos taxa pero con ...
+Para obtener las 100 secuencias homólogas se seleccionó la proteína [recA](https://www.uniprot.org/uniprotkb?query=RecA&facets=reviewed%3Atrue%2Clength%3A%5B201+TO+400%5D%2Cexistence%3A3) desde _UniProt_, puesto que contaba con un amplio repertorio de proteínas homólogas anotadas y bajo los siguientes criterios:
+
+1. Taxonomy name: `Bacteria`
+2. Status: `Reviewed (Swiss-Prot)`
+3. Protein Existence: `Homology`
+4. Sequence length: `201-400 AA`
+
+La búsqueda arrojó 1,210 resultados, los cuales fueron agrupados según su taxonomía para tomar:
+
+- 1 secuencia del grupo _Fusobacteriati_ (1 disponible)
+- 14 secuencias del grupo _Thermotogati_ (14 disponibles)
+- 35 secuencias del grupo _Bacillati_ (473 disponibles)
+- 50 secuencias del grupo _Pseudomonadati_ (722 disponibles)
+
+El número de secuencias elegidas de cada grupo es arbitrario y se decidió de acuerdo a qué tan abundante eran las secuencias, de menos a más.
+
+Una vez descargadas las secuencias FASTA, se llevó a cabo el siguiente procedimiento para poder obtener la matriz de similitud y distancia entre las secuencias:
 
 ```{shell Formateando FASTA}
 #| echo: true
@@ -133,7 +149,7 @@ distance.to_csv("./results/distance_matrix.tsv", sep="\t")
 del similarity, distance, matrix, all_vs_all, bitscore, ids
 ```
 
-# Clustering
+## Clustering
 
 # Resultados
 
