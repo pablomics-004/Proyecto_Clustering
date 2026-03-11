@@ -150,7 +150,148 @@ del similarity, distance, matrix, all_vs_all, bitscore, ids
 ```
 
 ## Clustering
+A partir de la matriz de distancias, simétrica y con diagonal en ceros, se realizó un clustering jerárquico utilizando los métodos de enlace *simple*, *complete*, *average* y *Ward*.
+Para ello, se estimó el número óptimo de clusters mediante los métodos *elbow* y *silhouette*, en ambos casos con el método de enlace *Ward*, un máximo de 20 *clusters*, y utilizando las funciones `hclust`, `agnes` y `diana`.
+
+```{r Librerías}
+#| eval: true
+#| echo: false
+#| message: false
+#| warning: false
+
+library(cluster)
+library(factoextra)
+library(dendextend)
+library(ape)
+library(corrplot)
+```
+
+```{r Funciones}
+#| eval: true
+#| echo: false
+#| message: false
+
+plot_nb_clusters <- function(data, func, method, subtitle) {
+  fviz_nbclust(data,
+               FUN = hcut,
+               hc_func = func,
+               hc_method = "ward.D2",
+               method = method,
+               k.max = 20) +
+    labs(subtitle = subtitle)
+}
+```
+
+```{r Número de clusters}
+#| eval: true
+#| echo: true
+#| message: false
+
+# Cargando matriz
+input <- read.delim("./results/distance_matrix.tsv", row.names = 1) # sep="\t"
+
+# Determinando número de clusters
+methods <- c("wss", "silhouette")
+titles <- c("Elbow", "Silhouette") 
+
+for (func in c("hclust", "agnes", "diana")) {
+  for (i in seq_along(methods)) {
+    print(
+      plot_nb_clusters(input, func, methods[i], paste(titles[i], " - ", func)))
+  }
+}
+```
+
+Ninguna de las combinaciones mostró un número conciso de clusters. En cambio, se observó una tendencia a la alta a medida que el número de clusters aumenta. (Pendiente justificar cómo proceder).
+
+```{r Clustering}
+#| eval: true
+#| echo: true
+#| message: false
+
+# Clustering jerárquico
+dist_matrix <- as.dist(input) # Triangular inferior
+
+# Métodos de clustering
+hc_single <- hclust(dist_matrix, method = "single")
+hc_complete <- hclust(dist_matrix, method = "complete")
+hc_average <- hclust(dist_matrix, method = "average")
+hc_ward <- hclust(dist_matrix, method = "ward.D2")
+
+# Dendrogramas
+d1 <- as.dendrogram(hc_single)
+d2 <- as.dendrogram(hc_complete)
+d3 <- as.dendrogram(hc_average)
+d4 <- as.dendrogram(hc_ward)
+
+par(mfrow = c(1,1))
+```
+
+```{r Plot 1}
+#| eval: true
+#| echo: true
+#| message: false
+plot(hc_single, hang = -1, cex = 0.4, main = "Single")
+```
+
+```{r Plot 2}
+#| eval: true
+#| echo: true
+#| message: false
+plot(hc_complete, hang = -1, cex = 0.4, main = "Complete")
+```
+
+```{r Plot 3}
+#| eval: true
+#| echo: true
+#| message: false
+plot(hc_average, hang = -1, cex = 0.4, main = "Average")
+```
+
+```{r Plot 4}
+#| eval: true
+#| echo: true
+#| message: false
+plot(hc_ward, hang = -1, cex = 0.4, main = "Ward")
+```
+
+Para cada método se generó un dendrograma y se compararon los árboles resultantes utilizando el coeficiente de Baker. Además, se calculó el coeficiente de aglomeración para cada método.
+
+```{r Comparación de árboles y coeficiente de aglomeración}
+# Comparar árboles con Baker
+trees <- dendlist(
+  "single" = d1,
+  "complete" = d2,
+  "average" = d3,
+  "ward" = d4
+)
+
+baker <- cor.dendlist(trees, method = "baker")
+corrplot(baker, tl.srt = 45, tl.cex = 0.8, tl.col = "black")
+```
+
+```{r Coeficiente de aglomeración}
+# Coeficiente de aglomeración
+a_single <- agnes(dist_matrix, method = "single")
+a_complete <- agnes(dist_matrix, method = "complete")
+a_average <- agnes(dist_matrix, method = "average")
+a_ward <- agnes(dist_matrix, method = "ward")
+
+a_single$ac
+a_complete$ac
+a_average$ac
+a_ward$ac
+```
 
 # Resultados
+
+Se guardaron los árboles resultantes en formato Newick para cada método de clustering.
+
+```{r Guardar árbol Ward en formato Newick}
+write.tree(as.phylo(hc_single), "./results/recA_single.tree")
+write.tree(as.phylo(hc_complete), "./results/recA_complete.tree")
+write.tree(as.phylo(hc_average), "./results/recA_average.tree")
+write.tree(as.phylo(hc_ward), "./results/recA_ward.tree")
+```
 
 # Referencias
