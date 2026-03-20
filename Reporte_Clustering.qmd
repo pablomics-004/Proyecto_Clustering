@@ -227,6 +227,8 @@ d4 <- as.dendrogram(hc_ward)
 par(mfrow = c(1,1))
 ```
 
+Para cada método se genera un dendrograma:
+
 ```{r Plot 1}
 #| eval: true
 #| echo: true
@@ -255,9 +257,13 @@ plot(hc_average, hang = -1, cex = 0.4, main = "Average")
 plot(hc_ward, hang = -1, cex = 0.4, main = "Ward")
 ```
 
-Para cada método se generó un dendrograma y se compararon los árboles resultantes utilizando el coeficiente de Baker. Además, se calculó el coeficiente de aglomeración para cada método.
+Se compararon los árboles resultantes utilizando el coeficiente de Baker y se calculó el coeficiente de aglomeración para cada método.
 
 ```{r Comparación de árboles y coeficiente de aglomeración}
+#| eval: true
+#| echo: true
+#| message: false
+
 # Comparar árboles con Baker
 trees <- dendlist(
   "single" = d1,
@@ -270,17 +276,48 @@ baker <- cor.dendlist(trees, method = "baker")
 corrplot(baker, tl.srt = 45, tl.cex = 0.8, tl.col = "black")
 ```
 
-```{r Coeficiente de aglomeración}
-# Coeficiente de aglomeración
+```{r Coeficiente de aglomeración Single}
+#| eval: true
+#| echo: true
+#| message: false
 a_single <- agnes(dist_matrix, method = "single")
-a_complete <- agnes(dist_matrix, method = "complete")
-a_average <- agnes(dist_matrix, method = "average")
-a_ward <- agnes(dist_matrix, method = "ward")
-
 a_single$ac
+```
+
+```{r Coeficiente de aglomeración Complete}
+#| eval: true
+#| echo: true
+#| message: false
+a_complete <- agnes(dist_matrix, method = "complete")
 a_complete$ac
+```
+
+```{r Coeficiente de aglomeración Average}
+#| eval: true
+#| echo: true
+#| message: false
+a_average <- agnes(dist_matrix, method = "average")
 a_average$ac
+```
+
+```{r Coeficiente de aglomeración Average}
+#| eval: true
+#| echo: true
+#| message: false
+a_ward <- agnes(dist_matrix, method = "ward")
 a_ward$ac
+```
+
+| Método   | Agglomerative Coefficient |
+|----------|---------------------------|
+| Single   | 0.7833                    |
+| Complete | 0.7662                    |
+| Average  | 0.7648                    |
+| Ward     | 0.9327                    |
+
+```{r Clusters Ward}
+clusters <- cutree(hc_ward, k = 4)
+table(clusters)
 ```
 
 # Resultados
@@ -293,5 +330,37 @@ write.tree(as.phylo(hc_complete), "./results/recA_complete.tree")
 write.tree(as.phylo(hc_average), "./results/recA_average.tree")
 write.tree(as.phylo(hc_ward), "./results/recA_ward.tree")
 ```
+
+# Análisis
+
+## Número de clusters
+
+Los métodos *elbow* y *silhouette* no mostraron un número óptimo claro de clusters, ya que ambas métricas presentan una tendencia gradual conforme aumenta el número de grupos. Este comportamiento sugiere que los datos no presentan particiones discretas bien definidas, sino más bien una estructura jerárquica continua, lo cual es esperable en secuencias de proteínas homólogas con relaciones evolutivas.
+
+## Métodos de clustering
+
+El análisis mostró que los árboles generados mediante los métodos *average* y *Ward* presentan una alta similitud entre sí, mientras que *complete* tiene la menor concordancia con respecto al resto.
+
+## Coeficiente de aglomeración
+
+El coeficiente de aglomeración más alto (0.932703) se obtuvo con el método *Ward*, lo que indica una estructura jerárquica más definida y consistente en comparación con los otros métodos y lo postula como el más adecuado para este conjunto de datos específico. Es importante, sin embargo, destacar que la elección del método de clustering debe basarse en la comprensión de los datos y su dominio de estudio, y no únicamente en métricas numéricas.
+
+## Dendrogramas
+
+Analizando los dendrogramas, se observa que:
+
+- El método *single* presenta muchas uniones concentradas en la parte inferior del árbol pero no permite la determinación de grupos definidos claramente.
+
+- El método *complete* genera agrupaciones más compactas pero aún concentradas en la parte inferior del árbol y con una estructura fragmentada.
+
+- El método *average* muestra una estructura intermedia, con algunos grupos discernibles y una distribución más equilibrada de las uniones a lo largo del árbol
+
+- El método *Ward* produce dendrogramas con clusters más compactos y bien separados, lo que facilita su identificación visual y respectiva interpretación
+
+# Conclusiones
+
+En conjunto, los resultados indican que el método de *Ward* es el más informativo para este conjunto de datos, ya que presenta el mayor coeficiente de aglomeración, una alta concordancia con *average* y una estructura de *clusters* más clara e interpretable.
+
+Considerando la estructura de las proteínas... [pendiente]
 
 # Referencias
