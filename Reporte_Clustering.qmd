@@ -331,11 +331,19 @@ write.tree(as.phylo(hc_average), "./results/recA_average.tree")
 write.tree(as.phylo(hc_ward), "./results/recA_ward.tree")
 ```
 
+```{r Limpieza}
+#| eval: true
+#| echo: false
+#| message: false
+rm(list = ls())
+invisible(gc())
+```
+
 # Análisis
 
 ## Número de clusters
 
-Los métodos *elbow* y *silhouette* no mostraron un número óptimo claro de clusters, ya que ambas métricas presentan una tendencia gradual conforme aumenta el número de grupos. Este comportamiento sugiere que los datos no presentan particiones discretas bien definidas, sino más bien una estructura jerárquica continua, lo cual es esperable en secuencias de proteínas homólogas con relaciones evolutivas.
+Los métodos *elbow* y *silhouette* no mostraron un número óptimo claro de clusters pues ambas presentan una tendencia gradual conforme aumenta el número de grupos. Esto sugiere que los datos no presentan particiones discretas bien definidas, sino más bien una estructura jerárquica continua, lo cual es esperable en secuencias de proteínas homólogas con relaciones evolutivas como **recA**. En este sentido, la interpretación de los resultados de clustering debe basarse en la comprensión biológica de las secuencias y su contexto evolutivo por sobre la búsqueda de un número específico de clusters a partir de métricas numéricas.
 
 ## Métodos de clustering
 
@@ -356,6 +364,8 @@ Analizando los dendrogramas, se observa que:
 - El método *average* muestra una estructura intermedia, con algunos grupos discernibles y una distribución más equilibrada de las uniones a lo largo del árbol
 
 - El método *Ward* produce dendrogramas con clusters más compactos y bien separados, lo que facilita su identificación visual y respectiva interpretación
+
+De todos los métodos, *Ward* presentó la estructura de clusters más clara e interpretable, lo que se refleja en su alto coeficiente de aglomeración y su alta concordancia con el método *average*. En contraste, *complete* y *single* mostraron una estructura fragmentada con fusiones a alturas similares y una baja concordancia con los otros métodos. *Single* presenta un efecto de *chaining*, en el cual las secuencias se agrupan de manera progresiva sin formar clusters bien definidos (@<cita_correspondiente>) mientras que *complete*, además de ser el método más discrepante con respecto a los demás, posee el índice de aglomeración más bajo y presenta una estructura en la que, al hacer un barrido, la convergencia de los datos a un solo *cluster* ocurre, en apariencia, de manera forzada, siendo así el método que más dificulta la identificación de grupos biológicamente relevantes.
 
 # Conclusiones
 
