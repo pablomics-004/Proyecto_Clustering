@@ -109,6 +109,18 @@ END{
 > ./results/suptrian_bitscore.tsv
 ```
 
+```{r Configurando entorno para ejecución}
+#| echo: false
+#| include: false
+
+if (!requireNamespace("reticulate", quietly = TRUE)) {
+  install.packages("reticulate")
+}
+
+library(reticulate)
+py_require(c("numpy", "pandas"))
+```
+
 ```{python Obteniendo matrices simétrica y de distancias}
 #| eval: true
 #| echo: true
@@ -139,14 +151,20 @@ matrix = matrix.reindex(index=ids, columns=ids)
 
 # Reflejando valores
 similarity = matrix.combine_first(matrix.T).fillna(0)
-fill_diagonal(similarity.values, 1) # Similitud máxima consigo misma
+arr = similarity.to_numpy(copy=True)
+fill_diagonal(arr, 1) # Similitud máxima consigo misma
+similarity = pd.DataFrame(
+  arr, 
+  index=similarity.index, 
+  columns=similarity.columns
+)
 distance = 1 - similarity
 
 # Guardado
 similarity.to_csv("./results/symmetric_bitscore_matrix.tsv", sep="\t")
 distance.to_csv("./results/distance_matrix.tsv", sep="\t")
 
-del similarity, distance, matrix, all_vs_all, bitscore, ids
+del similarity, distance, matrix, all_vs_all, bitscore, ids, arr
 ```
 
 ## Clustering
@@ -326,14 +344,6 @@ write.tree(as.phylo(hc_average), "./results/recA_average.tree")
 write.tree(as.phylo(hc_ward), "./results/recA_ward.tree")
 ```
 
-```{r Limpieza}
-#| eval: true
-#| echo: false
-#| message: false
-rm(list = ls())
-invisible(gc())
-```
-
 # Análisis
 
 ## Número de clusters
@@ -371,6 +381,15 @@ Se cortó el dendrograma generado mediante el método de *ward* en `𝑘=4`, y s
 ```{r Clusters Ward}
 clusters <- cutree(hc_ward, k = 4)
 table(clusters)
+```
+
+```{r Limpieza}
+#| eval: true
+#| echo: false
+#| include: false
+
+rm(list = ls())
+invisible(gc())
 ```
 
 A sabiendas de que el desbalance en el número de secuencias por grupo puede influir en la formación de los clusters, observamos que estos tamaños no coinciden exactamente con la distribución taxonómica original de las secuencias (enunciados en la sección de *Obtención de datos*), lo cual sugiere que el clustering no refleja solamente la clasificación taxonómica, sino también la similitud evolutiva entre las proteínas.
